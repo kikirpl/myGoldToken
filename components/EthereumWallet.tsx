@@ -1,21 +1,6 @@
 // components/EthereumWallet.tsx
 import { useState, useEffect } from "react";
 
-interface EthereumProvider {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  on: (eventName: string, handler: (...args: any[]) => void) => void;
-  removeListener: (
-    eventName: string,
-    handler: (...args: any[]) => void
-  ) => void;
-}
-
-declare global {
-  interface Window {
-    ethereum?: EthereumProvider;
-  }
-}
-
 export default function EthereumWallet() {
   const [account, setAccount] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
@@ -28,9 +13,9 @@ export default function EthereumWallet() {
   const checkConnection = async () => {
     if (window.ethereum) {
       try {
-        const accounts = await window.ethereum.request({
+        const accounts = (await window.ethereum.request({
           method: "eth_accounts",
-        });
+        })) as string[];
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           setConnected(true);
@@ -49,9 +34,9 @@ export default function EthereumWallet() {
 
     setConnecting(true);
     try {
-      const accounts = await window.ethereum.request({
+      const accounts = (await window.ethereum.request({
         method: "eth_requestAccounts",
-      });
+      })) as string[];
 
       if (accounts.length > 0) {
         setAccount(accounts[0]);

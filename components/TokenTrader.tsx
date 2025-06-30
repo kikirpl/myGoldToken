@@ -1,12 +1,11 @@
-// components/TokenTrader.tsx
 import { useState, useEffect } from "react";
 
 interface EthereumProvider {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  on: (eventName: string, handler: (...args: any[]) => void) => void;
+  on: (eventName: string, handler: (...args: unknown[]) => void) => void;
   removeListener: (
     eventName: string,
-    handler: (...args: any[]) => void
+    handler: (...args: unknown[]) => void
   ) => void;
 }
 
@@ -40,9 +39,9 @@ export default function TokenTrader() {
   const checkConnection = async () => {
     if (window.ethereum) {
       try {
-        const accounts = await window.ethereum.request({
+        const accounts = (await window.ethereum.request({
           method: "eth_accounts",
-        });
+        })) as string[];
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           setConnected(true);
@@ -61,10 +60,9 @@ export default function TokenTrader() {
 
     setLoading(true);
     try {
-      // Using 1inch API for getting quotes (example)
       const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
       const amountInWei = (parseFloat(amount) * Math.pow(10, 18)).toString();
-      const chainId = 1; // Ethereum mainnet
+      const chainId = 1;
 
       const response = await fetch(
         `https://api.1inch.dev/swap/v5.2/${chainId}/quote?src=${ETH_ADDRESS}&dst=${tokenAddress}&amount=${amountInWei}`
@@ -74,7 +72,7 @@ export default function TokenTrader() {
         throw new Error("Failed to get quote");
       }
 
-      const quoteData = await response.json();
+      const quoteData = (await response.json()) as Quote;
       setQuote(quoteData);
     } catch (error) {
       console.error("Error getting quote:", error);
@@ -84,18 +82,14 @@ export default function TokenTrader() {
   };
 
   const buyToken = async () => {
-    if (!quote || !connected || !window.ethereum) return;
+    if (!quote || !connected || !window.ethereum || !account) return;
 
     setLoading(true);
     try {
-      // This is a simplified example - you would need to implement
-      // actual swap logic using DEX aggregators like 1inch, Uniswap, etc.
-
       const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
       const amountInWei = (parseFloat(amount) * Math.pow(10, 18)).toString();
       const chainId = 1;
 
-      // Get swap transaction data
       const swapResponse = await fetch(
         `https://api.1inch.dev/swap/v5.2/${chainId}/swap?src=${ETH_ADDRESS}&dst=${tokenAddress}&amount=${amountInWei}&from=${account}&slippage=1`
       );
@@ -106,8 +100,7 @@ export default function TokenTrader() {
 
       const swapData = await swapResponse.json();
 
-      // Send transaction
-      const txHash = await window.ethereum.request({
+      const txHash = (await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [
           {
@@ -118,11 +111,10 @@ export default function TokenTrader() {
             gas: swapData.tx.gas,
           },
         ],
-      });
+      })) as string;
 
       alert(`Transaction sent! Hash: ${txHash}`);
 
-      // Reset form after successful trade
       setQuote(null);
       setAmount("");
       setTokenAddress("");
@@ -214,7 +206,7 @@ export default function TokenTrader() {
           <div className="bg-gray-800 rounded-lg p-4 space-y-2">
             <h4 className="text-yellow-400 font-semibold">Quote:</h4>
             <p className="text-green-400">
-              You'll receive: ~
+              You&apos;ll receive: ~
               {(
                 parseInt(quote.toAmount) / Math.pow(10, quote.toToken.decimals)
               ).toFixed(6)}{" "}

@@ -1,20 +1,4 @@
-// components/EthereumWalletInfo.tsx
-import { useState, useEffect } from "react";
-
-interface EthereumProvider {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  on: (eventName: string, handler: (...args: any[]) => void) => void;
-  removeListener: (
-    eventName: string,
-    handler: (...args: any[]) => void
-  ) => void;
-}
-
-declare global {
-  interface Window {
-    ethereum?: EthereumProvider;
-  }
-}
+import { useState, useEffect, useCallback } from "react";
 
 export default function EthereumWalletInfo() {
   const [account, setAccount] = useState<string | null>(null);
@@ -22,17 +6,35 @@ export default function EthereumWalletInfo() {
   const [loading, setLoading] = useState(false);
   const [network, setNetwork] = useState<string>("");
 
-  useEffect(() => {
-    checkConnection();
-    getNetworkInfo();
-  }, []);
+  const fetchBalance = useCallback(
+    async (address?: string) => {
+      if (!window.ethereum) return;
+      const targetAddress = address || account;
+      if (!targetAddress) return;
 
-  const checkConnection = async () => {
+      setLoading(true);
+      try {
+        const balanceHex = (await window.ethereum.request({
+          method: "eth_getBalance",
+          params: [targetAddress, "latest"],
+        })) as string;
+
+        const balanceInEth = parseInt(balanceHex, 16) / Math.pow(10, 18);
+        setBalance(balanceInEth.toFixed(6));
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+      }
+      setLoading(false);
+    },
+    [account]
+  );
+
+  const checkConnection = useCallback(async () => {
     if (window.ethereum) {
       try {
-        const accounts = await window.ethereum.request({
+        const accounts = (await window.ethereum.request({
           method: "eth_accounts",
-        });
+        })) as string[];
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           fetchBalance(accounts[0]);
@@ -41,14 +43,15 @@ export default function EthereumWalletInfo() {
         console.error("Error checking connection:", error);
       }
     }
-  };
+  }, [fetchBalance]);
 
-  const getNetworkInfo = async () => {
+  const getNetworkInfo = useCallback(async () => {
     if (window.ethereum) {
       try {
-        const chainId = await window.ethereum.request({
+        const chainId = (await window.ethereum.request({
           method: "eth_chainId",
-        });
+        })) as string;
+
         const networkNames: { [key: string]: string } = {
           "0x1": "Ethereum Mainnet",
           "0x3": "Ropsten Testnet",
@@ -58,34 +61,18 @@ export default function EthereumWalletInfo() {
           "0x89": "Polygon Mainnet",
           "0x13881": "Polygon Mumbai",
         };
+
         setNetwork(networkNames[chainId] || `Chain ID: ${chainId}`);
       } catch (error) {
         console.error("Error getting network info:", error);
       }
     }
-  };
+  }, []);
 
-  const fetchBalance = async (address?: string) => {
-    if (!window.ethereum) return;
-
-    const targetAddress = address || account;
-    if (!targetAddress) return;
-
-    setLoading(true);
-    try {
-      const balance = await window.ethereum.request({
-        method: "eth_getBalance",
-        params: [targetAddress, "latest"],
-      });
-
-      // Convert from Wei to ETH
-      const balanceInEth = parseInt(balance, 16) / Math.pow(10, 18);
-      setBalance(balanceInEth.toFixed(6));
-    } catch (error) {
-      console.error("Error fetching balance:", error);
-    }
-    setLoading(false);
-  };
+  useEffect(() => {
+    checkConnection();
+    getNetworkInfo();
+  }, [checkConnection, getNetworkInfo]);
 
   if (!account) {
     return (

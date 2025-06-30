@@ -1,11 +1,22 @@
-// components/EthereumWalletProvider.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-// Define a context for Ethereum Wallet
-const EthereumWalletContext = createContext<any>(null);
+interface EthereumWalletContextType {
+  account: string | null;
+  connected: boolean;
+}
 
-export const useEthereumWallet = () => {
-  return useContext(EthereumWalletContext);
+const EthereumWalletContext = createContext<
+  EthereumWalletContextType | undefined
+>(undefined);
+
+export const useEthereumWallet = (): EthereumWalletContextType => {
+  const context = useContext(EthereumWalletContext);
+  if (!context) {
+    throw new Error(
+      "useEthereumWallet must be used within EthereumWalletProvider"
+    );
+  }
+  return context;
 };
 
 export const EthereumWalletProvider = ({
@@ -17,13 +28,12 @@ export const EthereumWalletProvider = ({
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    // Check if the wallet is connected on mount
     const checkConnection = async () => {
       if (window.ethereum) {
         try {
-          const accounts = await window.ethereum.request({
+          const accounts = (await window.ethereum.request({
             method: "eth_accounts",
-          });
+          })) as string[];
           if (accounts.length > 0) {
             setAccount(accounts[0]);
             setConnected(true);
@@ -36,9 +46,9 @@ export const EthereumWalletProvider = ({
 
     checkConnection();
 
-    // Listen for account changes
     if (window.ethereum) {
-      window.ethereum.on("accountsChanged", (accounts: string[]) => {
+      window.ethereum.on("accountsChanged", (...args: unknown[]) => {
+        const accounts = args[0] as string[];
         setAccount(accounts.length > 0 ? accounts[0] : null);
         setConnected(accounts.length > 0);
       });

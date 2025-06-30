@@ -14,9 +14,9 @@ export default function Home() {
     const checkConnection = async () => {
       if (window.ethereum) {
         try {
-          const accounts = await window.ethereum.request({
+          const accounts = (await window.ethereum.request({
             method: "eth_accounts",
-          });
+          })) as string[];
           setConnected(accounts.length > 0);
         } catch (error) {
           console.error("Error checking connection:", error);
@@ -28,7 +28,8 @@ export default function Home() {
 
     // Listen for account changes
     if (window.ethereum) {
-      window.ethereum.on("accountsChanged", (accounts: string[]) => {
+      window.ethereum.on("accountsChanged", (...args: unknown[]) => {
+        const accounts = args[0] as string[];
         setConnected(accounts.length > 0);
       });
     }
