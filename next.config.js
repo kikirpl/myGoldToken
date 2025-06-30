@@ -1,13 +1,13 @@
 const isGithubPages = process.env.NODE_ENV === "production";
-const repo = "myGoldToken"; // Ganti dengan nama repo kamu di GitHub
+const repo = "myGoldToken"; // Pastikan nama repo kamu di GitHub
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export", // Export aplikasi menjadi statis
-  basePath: isGithubPages ? `/${repo}` : "", // Menentukan basePath untuk GitHub Pages
-  assetPrefix: isGithubPages ? `/${repo}/` : "", // Menyesuaikan asset prefix
+  output: "export", // Untuk export statis
+  basePath: isGithubPages ? `/${repo}` : "", // Base path untuk GitHub Pages
+  assetPrefix: isGithubPages ? `/${repo}/` : "", // Asset prefix untuk GitHub Pages
   images: {
-    unoptimized: true, // Nonaktifkan optimasi gambar (perlu jika kamu menggunakan gambar besar)
+    unoptimized: true, // Nonaktifkan optimasi gambar (untuk GitHub Pages)
   },
   reactStrictMode: true, // Menjaga aplikasi tetap ketat
 };
